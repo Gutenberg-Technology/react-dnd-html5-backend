@@ -34,25 +34,26 @@ export default class HTML5Backend {
     this.endDragNativeItem = this.endDragNativeItem.bind(this);
   }
 
-  setup() {
-    if (typeof window === 'undefined') {
-      return;
+  setup(target = document.querySelector("iframe").contentWindow) {
+    if (typeof target === 'undefined') {
+      target = window;
     }
 
     if (this.constructor.isSetUp) {
       throw new Error('Cannot have two HTML5 backends at the same time.');
     }
     this.constructor.isSetUp = true;
-    this.addEventListeners(window);
+    this.addEventListeners(target);
   }
 
-  teardown() {
-    if (typeof window === 'undefined') {
-      return;
+  // TODO - Maybe save the target and use the same target for both setup and teardown to ensure the events are correctly removed in case the the target isn't provided.
+  teardown(target = document.querySelector("iframe").contentWindow) {
+    if (typeof target === 'undefined') {
+      target = window;
     }
 
     this.constructor.isSetUp = false;
-    this.removeEventListeners(window);
+    this.removeEventListeners(target);
     this.clearCurrentDragSourceNode();
   }
 
