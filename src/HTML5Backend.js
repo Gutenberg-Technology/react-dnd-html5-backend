@@ -1,4 +1,5 @@
 import defaults from 'lodash/defaults';
+import _lodashIncludes from 'lodash/_arrayIncludes';
 import shallowEqual from './shallowEqual';
 import EnterLeaveCounter from './EnterLeaveCounter';
 import { isFirefox } from './BrowserDetector';
@@ -34,16 +35,27 @@ export default class HTML5Backend {
     this.endDragNativeItem = this.endDragNativeItem.bind(this);
   }
 
-  setup() {
-    // We must add the event listeners to all our windows.
-    var iframe = document.querySelector("#delight-iframe");
-    var targets = [
-        window
-    ];
-
-    if (iframe) {
-      targets.push(iframe.contentWindow);
+  _getTargets() {
+    var elements = document.querySelectorAll('[data-draggable="true"]');
+    var targets = [];
+    for(var i in elements){
+      var element = elements[i];
+      if(element.contentWindow){
+        if(!_lodashIncludes(targets, element.contentWindow)) {
+          targets.push(element.contentWindow);
+        }
+      }else{
+        if(!_lodashIncludes(targets, window)){
+          targets.push(window);
+        }
+      }
     }
+
+    return targets;
+  }
+
+  setup() {
+    var targets = this._getTargets();
 
     if (this.constructor.isSetUp) {
       throw new Error('Cannot have two HTML5 backends at the same time.');
@@ -56,19 +68,11 @@ export default class HTML5Backend {
 
   // TODO - Maybe save the target and use the same target for both setup and teardown to ensure the events are correctly removed in case the the target isn't provided.
   teardown() {
-    // We must remove the event listeners to all our windows.
-    var iframe = document.querySelector("#delight-iframe");
-    var targets = [
-        window
-    ];
-
-    if (iframe) {
-      targets.push(iframe.contentWindow);
-    }
+    var targets = this._getTargets();
 
     this.constructor.isSetUp = false;
     for(var i in targets){
-      this.addEventListeners(targets[i]);
+      this.removeEventListeners(targets[i]);
     }
     this.clearCurrentDragSourceNode();
   }
